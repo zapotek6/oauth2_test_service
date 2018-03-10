@@ -1,0 +1,17 @@
+{
+  "consumer": "user",
+  "api": "user.add",
+  "replyTo": "me",
+  "auth": {
+    "mode": "credentials",
+    "uid": "mk",
+    "pwd": "pineta"
+  },
+  "payload": {
+	"name": "johnny",
+        "surname":  "stecchino",
+	"email": "zapotek6@gmail.com",
+	"uid": "zapotek6@gmail.com",
+	"pwd": "avantisavoia"
+  }
+}
