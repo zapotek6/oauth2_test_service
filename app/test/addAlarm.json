@@ -1,0 +1,20 @@
+{
+  "consumer": "contact",
+  "api": "alarm",
+  "replyTo": "me",
+  "auth": {
+    "mode": "credentials",
+    "uid": "mk",
+    "pwd": "pineta"
+  },
+  "payload": {
+    "elems": [{
+      "owner": {
+        "uuid": "b44f9ea1-1ae5-4901-8308-894dc6aa931b",
+        "type": "ACTIVITY"
+      },
+      "alarm_time": "1531386768"
+    }],
+    "action": "add"
+  }
+}

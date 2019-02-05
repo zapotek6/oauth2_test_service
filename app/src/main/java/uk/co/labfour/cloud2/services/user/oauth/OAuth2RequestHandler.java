@@ -13,10 +13,12 @@ public class OAuth2RequestHandler {
         HttpHeaders httpHeaders = new HttpHeaders();
 
         httpHeaders.setCacheControl("");
+
+        return httpHeaders;
     }
 
     public ResponseEntity<?> doAuthorize(HttpServletRequest request) {
-        AuthorizationRequest authorizationRequest = AuthorizationRequest.build(request.getParameterMap());
+        AuthorizationRequest authorizationRequest = AuthorizationRequest.parse(request.getParameterMap());
         HttpHeaders httpHeaders = new HttpHeaders();
 
         if (authorizationRequest.isValid()) {
@@ -24,7 +26,7 @@ public class OAuth2RequestHandler {
 
             AuthorizationResponse authorizationResponse = new AuthorizationResponse(authorizationRequest);
             authorizationResponse.setCode("0987654321");
-            httpHeaders.setLocation(authorizationResponse.buildLocation());
+            httpHeaders.setLocation(authorizationResponse.buildRedirectUri());
             return new ResponseEntity<>("", httpHeaders, HttpStatus.FOUND);
 
         } else {

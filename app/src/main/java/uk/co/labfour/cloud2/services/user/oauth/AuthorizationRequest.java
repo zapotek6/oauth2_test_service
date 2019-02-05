@@ -1,22 +1,32 @@
 package uk.co.labfour.cloud2.services.user.oauth;
 
+import uk.co.labfour.error.BEarer;
+
 import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
 public class AuthorizationRequest {
-    String clientId = null;
-    URI redirectUri = null;
-    OAuth2Common.AuthorizationGrantType authorizationGrantType = null;
-    Set<String> scopes =null;
-    String state = null;
+    ResponseType responseType;
+
+    String clientId;
+    String clientSecret;
+
+    URI redirectUri;
+
+    Set<String> scopes;
+    String state;
 
     public String getClientId() {
         return clientId;
     }
 
-    public OAuth2Common.AuthorizationGrantType getAuthorizationGrantType() {
-        return authorizationGrantType;
+    public String getClientSecret() {
+        return clientSecret;
+    }
+
+    public ResponseType getResponseType() {
+        return responseType;
     }
 
     public Set<String> getScopes() {
@@ -31,32 +41,42 @@ public class AuthorizationRequest {
         return state;
     }
 
-    public boolean isValid() {
-        if (    null == clientId ||
-                null == redirectUri ||
-                null == authorizationGrantType) {
-            return false;
-        } else {
+    private boolean valid() {
+        if (null != clientId &&
+            null != responseType) {
             return true;
+        } else {
+            return false;
         }
     }
 
-    public static AuthorizationRequest build(Map<String, String[]> parameters) {
+    public static BEarer<AuthorizationRequest> parse(Map<String, String[]> parameters) {
         AuthorizationRequest authorizationRequest =new AuthorizationRequest();
-
 
         authorizationRequest.clientId = OAuth2Common.getClientId(parameters);
 
+        authorizationRequest.clientSecret = OAuth2Common.getClientSecret(parameters);
+
         authorizationRequest.redirectUri = OAuth2Common.getRedirecturi(parameters);
 
-        authorizationRequest.authorizationGrantType = OAuth2Common.getResponseType(parameters);
+        BEarer<ResponseType> getResponseTypeOp = OAuth2Common.getResponseType(parameters);
+        if (getResponseTypeOp.isOk()) {
+            authorizationRequest.responseType = OAuth2Common.getResponseType(parameters).get();
+        } else {
+            authorizationRequest.responseType = null;
+        }
 
         authorizationRequest.scopes = OAuth2Common.getScopes(parameters);
 
         authorizationRequest.state = OAuth2Common.getState(parameters);
 
-        return authorizationRequest;
+        if (authorizationRequest.valid()) {
+            return new BEarer<AuthorizationRequest>()
+                    .setSuccess()
+                    .set(authorizationRequest);
+        } else {
+            return BEarer.createGenericError(AuthorizationRequest.class.getSimpleName(), "Invalid request");
+        }
     }
-
 
 }

@@ -1,0 +1,19 @@
+{
+  "consumer": "contact",
+  "api": "contact",
+  "replyTo": "me",
+  "auth": {
+    "mode": "credentials",
+    "uid": "mk",
+    "pwd": "pineta"
+  },
+  "payload": {
+    "elems": [{
+      "firstname": "Zio",
+      "lastname": "Paperone",
+      "email": "zapotek66@gmail.com",
+      "phone": "+393472343778"
+    }],
+    "action": "add"
+  }
+}

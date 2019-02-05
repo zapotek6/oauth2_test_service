@@ -1,24 +1,11 @@
 package uk.co.labfour.cloud2.services.user.core;
 
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.bind.annotation.RequestMethod.OPTIONS;
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
-import static org.springframework.web.bind.annotation.RequestMethod.PUT;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.servlet.http.HttpServletRequest;
-
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 import uk.co.labfour.bjson.BJsonArray;
 import uk.co.labfour.bjson.BJsonException;
 import uk.co.labfour.bjson.BJsonObject;
@@ -27,51 +14,102 @@ import uk.co.labfour.cloud2.microservice.ServiceStub;
 import uk.co.labfour.cloud2.protocol.BaseRequest;
 import uk.co.labfour.cloud2.protocol.BaseResponse;
 import uk.co.labfour.cloud2.services.user.MyServiceContext;
-import uk.co.labfour.cloud2.services.user.model.CommunicationChannels;
-import uk.co.labfour.cloud2.services.user.model.PushNotification;
-import uk.co.labfour.cloud2.services.user.oauth.AuthorizationRequest;
-import uk.co.labfour.cloud2.services.user.oauth.AuthorizationResponse;
-import uk.co.labfour.cloud2.services.user.oauth.TokenRequest;
-import uk.co.labfour.cloud2.services.user.oauth.TokenResponse;
-import uk.co.labfour.cloud2.services.user.services.Repository;
+import uk.co.labfour.cloud2.services.user.oauth.*;
+import uk.co.labfour.error.BEarer;
 import uk.co.labfour.error.BException;
 import uk.co.labfour.logger.MyLogger;
 import uk.co.labfour.logger.MyLoggerFactory;
 
-import java.util.Enumeration;
-import java.util.Map;
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.servlet.http.HttpServletRequest;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RequestMapping("/")
-@CrossOrigin(origins = "*", methods = {OPTIONS, POST, PUT, GET }, maxAge = 3600)
+@CrossOrigin(origins = "*", methods = {OPTIONS, POST, PUT, GET}, maxAge = 3600)
 @RestController
 public class Rest {
-	
-	MyLogger log = MyLoggerFactory.getInstance();
-	ServiceContext si;
+
+    MyLogger log = MyLoggerFactory.getInstance();
+    ServiceContext si;
 
 
-	@RequestMapping(path = "/oauth/authorize", method = RequestMethod.GET)
-	private ResponseEntity<?> oauthAuthorizationRequest(HttpServletRequest request) {
+    @RequestMapping(path = "/oauth/user/login", method = RequestMethod.GET)
+    private ResponseEntity<?> userLogin(HttpServletRequest request) {
 
-		HttpHeaders httpHeaders = new HttpHeaders();
+        HttpHeaders httpHeaders = new HttpHeaders();
+
+        try {
+            httpHeaders.setLocation(new URI("/oauth/user/authorize"));
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return new ResponseEntity<>("accepted", httpHeaders, HttpStatus.ACCEPTED);
+    }
 
 
-        AuthorizationRequest authorizationRequest = AuthorizationRequest.build(request.getParameterMap());
-		if (authorizationRequest.isValid()) {
-            System.out.println("request valid");
+    @RequestMapping(path = "/oauth/user/authorize", method = RequestMethod.GET)
+    private ResponseEntity<?> userAuthorize(HttpServletRequest request) {
 
-            AuthorizationResponse authorizationResponse = new AuthorizationResponse(authorizationRequest);
-            authorizationResponse.setCode("0987654321");
-            httpHeaders.setLocation(authorizationResponse.buildLocation());
-            return new ResponseEntity<>("", httpHeaders, HttpStatus.FOUND);
+        HttpHeaders httpHeaders = new HttpHeaders();
 
-		} else {
-            System.out.println("invalid request");
+        try {
+            httpHeaders.setLocation(new URI("/oauth/user/authorize"));
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return new ResponseEntity<>("accepted", httpHeaders, HttpStatus.ACCEPTED);
+    }
+
+
+    @RequestMapping(path = "/oauth/authorize", method = RequestMethod.GET)
+    private ResponseEntity<?> oauthAuthorizationRequest(HttpServletRequest request) {
+
+        HttpHeaders httpHeaders = new HttpHeaders();
+
+
+        BEarer<AuthorizationRequest> getAuthorizationRequestOp = AuthorizationRequest.parse(request.getParameterMap());
+
+        if (getAuthorizationRequestOp.isOk()) {
+
+            AuthorizationRequest authorizationRequest = getAuthorizationRequestOp.get();
+
+            switch (authorizationRequest.getResponseType()) {
+                case AUTHORIZATION_CODE:
+                    AuthorizationCodeGrantProcessor processor = new AuthorizationCodeGrantProcessor(clientId -> {
+                        return new BEarer<ClientRegistration>()
+                                .setSuccess()
+                                .set(new ClientRegistration());
+                    });
+
+                    if (processor.validate(authorizationRequest).isOk()) {
+
+                        authorizationRequest.getClientId();
+                        authorizationRequest.getClientSecret();
+                        URI redirectTo = authorizationRequest.getRedirectUri();
+                        authorizationRequest.getResponseType();
+                        authorizationRequest.getScopes();
+
+                        //UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder.fromUri(redirectUri);
+                        BEarer<URI> buildUriOp = redirectTo.
+                        if (buildUriOp.isOk()) {
+                            httpHeaders.setLocation(buildUriOp.get());
+                            return new ResponseEntity<>("", httpHeaders, HttpStatus.FOUND);
+
+                        } else {
+
+                        }
+
+                    }
+            }
         }
 
-		return new ResponseEntity<>("accepted", httpHeaders, HttpStatus.ACCEPTED);
+        return new ResponseEntity<>("", httpHeaders, HttpStatus.BAD_REQUEST);
 
-	}
+    }
 
     @RequestMapping(path = "/oauth/token", method = RequestMethod.POST)
     private ResponseEntity<?> oauthTokenRequest(HttpServletRequest request) {
@@ -87,7 +125,7 @@ public class Rest {
 
 		for (String s: par.keySet()) {
 			System.out.print("k: " + s);
-			for (String v: (String[])par.get(s)) {
+			for (String v: (String[])par.loadAsJson(s)) {
 				System.out.println(" v: " + v);
 			}
 		}*/
@@ -127,9 +165,9 @@ public class Rest {
         }
 
 
-        BJsonObject  feed = new BJsonObject();
+        BJsonObject feed = new BJsonObject();
         try {
-            BJsonObject  video = new BJsonObject();
+            BJsonObject video = new BJsonObject();
             video.put("id", "1333");
             BJsonArray tags = new BJsonArray();
             tags.add("comedy");
@@ -150,7 +188,6 @@ public class Rest {
         }
 
 
-
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(MediaType.APPLICATION_JSON);
         return new ResponseEntity<>(feed.toString(), httpHeaders, HttpStatus.OK);
@@ -158,81 +195,66 @@ public class Rest {
     }
 
 
-	@RequestMapping(method = RequestMethod.POST)
-	public ResponseEntity<?> add(@RequestBody String input, HttpServletRequest request) {
-		
-		HttpHeaders httpHeaders = new HttpHeaders();
+    @RequestMapping(method = RequestMethod.POST)
+    public ResponseEntity<?> add(@RequestBody String input, HttpServletRequest request) {
 
-		BaseRequest brequest;
-		BaseResponse response = null;
-		
-		try {
-			brequest = BaseRequest.parseJson(input);
+        HttpHeaders httpHeaders = new HttpHeaders();
 
-			ServiceStub serviceStub = si.getServiceStub();
+        BaseRequest brequest;
+        BaseResponse response = null;
 
-			response = serviceStub.doStartServingRequestSync(si.getAaaClient(), si.getAaaTransport(), brequest);
-			
-		} catch (BException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		String sResponse = "";
-		try {
-			sResponse = BaseResponse.toJsonString(response);
-		} catch (IllegalArgumentException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (BJsonException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}		
-		
-		return new ResponseEntity<>(sResponse, httpHeaders, HttpStatus.CREATED);
-		
+        try {
+            brequest = BaseRequest.parseJson(input);
+
+            ServiceStub serviceStub = si.getServiceStub();
+
+            response = serviceStub.doStartServingRequestSync(si.getAaaClient(), si.getAaaTransport(), brequest);
+
+        } catch (BException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        String sResponse = "";
+        try {
+            sResponse = BaseResponse.toJsonString(response);
+        } catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (BJsonException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return new ResponseEntity<>(sResponse, httpHeaders, HttpStatus.CREATED);
+
     }
-	 
-	
- 	@PostConstruct
-	public void init() {
- 		log.i(this, "PostConstruct SpringApp start");
- 		
- 		 		
- 		try {
- 			si = MyServiceContext.getInstance();
- 			si.getServiceStub().start();
- 			test();
-		} catch (BException e) {
-			e.printStackTrace();
-		}
- 		log.i(this, "PostConstruct SpringApp end");
-	}
 
-	private void test() throws BException {
-		PushNotification pn = new PushNotification();
-		pn.deviceId = "id";
-		pn.deviceDescription = "N8";
-		pn.data.appId="1234567890987654321";
-		pn.data.gateway="gcm";
-		pn.data.token="234rtg4ecguhyfgdw4wzf";
-		pn.capabilities.add("text");
-		pn.capabilities.add("textWithUrl");
-		CommunicationChannels communicationChannels = new CommunicationChannels();
-		communicationChannels.pushNotifications.add(pn);
-		Repository.getInstance(si).save(communicationChannels);
-	}
-	
-	@PreDestroy
-	public void destory() {
-		log.i(this, "PreDestroy SpringApp start");
-		try {
+
+    @PostConstruct
+    public void init() {
+        log.i(this, "PostConstruct SpringApp start");
+
+
+        try {
+            si = MyServiceContext.getInstance();
+            si.getServiceStub().start();
+        } catch (BException e) {
+            e.printStackTrace();
+        }
+        log.i(this, "PostConstruct SpringApp end");
+    }
+
+    @PreDestroy
+    public void destory() {
+        log.i(this, "PreDestroy SpringApp start");
+        try {
             si.getServiceStub().stop();
-		} catch (BException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		log.i(this, "PreDestroy SpringApp end");
-	}
+        } catch (BException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        log.i(this, "PreDestroy SpringApp end");
+    }
 
 }

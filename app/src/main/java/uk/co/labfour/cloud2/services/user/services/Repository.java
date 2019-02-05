@@ -1,19 +1,17 @@
 package uk.co.labfour.cloud2.services.user.services;
 
-import java.util.UUID;
-
 import uk.co.labfour.cloud2.entity.identity.Identity;
 import uk.co.labfour.cloud2.entity.primitive.SimpleObject;
 import uk.co.labfour.cloud2.microservice.ServiceContext;
 import uk.co.labfour.cloud2.microservice.ServiceVariables;
-import uk.co.labfour.cloud2.persistence.nosql.GenericObjectHelper;
-import uk.co.labfour.cloud2.persistence.nosql.GenericRepository;
-import uk.co.labfour.cloud2.persistence.nosql.GenericDriverAdapter;
+import uk.co.labfour.cloud2.persistence.nosql.*;
 import uk.co.labfour.cloud2.persistence.nosql.mongodb.MongoDbAdapter;
 import uk.co.labfour.cloud2.persistence.redis.RedisRepoCache;
-import uk.co.labfour.cloud2.services.user.model.Activity;
-import uk.co.labfour.cloud2.services.user.model.CommunicationChannels;
+import uk.co.labfour.cloud2.services.user.model.*;
+import uk.co.labfour.error.BEarer;
 import uk.co.labfour.error.BException;
+
+import java.util.UUID;
 
 public class Repository extends GenericRepository {
 	private ServiceContext si;
@@ -44,8 +42,8 @@ public class Repository extends GenericRepository {
 		
 		log.i(this, "MongoDB connection string " + si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING));
 		
-		// User
-		GenericDriverAdapter driverTmp = new MongoDbAdapter(si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING), dbName, "users");
+		// Activities
+		GenericDriverAdapter driverTmp = new MongoDbAdapter(si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING), dbName, "activities");
 		GenericObjectHelper<Activity> userHelper = new GenericObjectHelper<Activity>(cache, driverTmp, Activity.class) {
 			
 			@Override
@@ -72,33 +70,137 @@ public class Repository extends GenericRepository {
 		objectHelperCollection.put(Activity.class, userHelper);
 
 
-		// Communication channels
-		driverTmp = new MongoDbAdapter(si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING), dbName, "CommunicationChannels");
-		GenericObjectHelper<CommunicationChannels> commChHelper = new GenericObjectHelper<CommunicationChannels>(cache, driverTmp, CommunicationChannels.class) {
+		driverTmp = new MongoDbAdapter(si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING), dbName, "contact");
+		GenericObjectHelper<Activity> contactHelper = new GenericObjectHelper<Activity>(cache, driverTmp, Contact.class) {
 
 			@Override
 			public void addKeysHook() {
 				addKey(DEFAULT_PRIMARY_KEY);
+
+			}
+
+			@Override
+			public void initHook() {
+				try {
+					((MongoDbAdapter)getDriver()).createIndex("email", true);
+				} catch (BException e) {
+					e.printStackTrace();
+				}
+			}
+			@Override
+			public void del(Object obj) {
+				Contact contact = (Contact)obj;
+				del(DEFAULT_PRIMARY_KEY, contact.getUuidAsString());
+				//del(Market.MARKET_KEY, market.getMarketKey());
+			}
+		};
+		objectHelperCollection.put(Contact.class, contactHelper);
+
+		driverTmp = new MongoDbAdapter(si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING), dbName, "alarm");
+		GenericObjectHelper<Activity> alarmHelper = new GenericObjectHelper<Activity>(cache, driverTmp, Alarm.class) {
+
+			@Override
+			public void addKeysHook() {
+				addKey(DEFAULT_PRIMARY_KEY);
+
 			}
 
 			@Override
 			public void initHook() {
 				/*try {
-					((MongoDbAdapter)getDriver()).createIndex(Market.MARKET_KEY, true);
+					((MongoDbAdapter)getDriver()).createIndex("email", true);
 				} catch (BException e) {
 					e.printStackTrace();
 				}*/
 			}
-
 			@Override
 			public void del(Object obj) {
-				CommunicationChannels cmmCh = (CommunicationChannels)obj;
-				del(DEFAULT_PRIMARY_KEY, cmmCh.getUuidAsString());
+				Alarm alarm = (Alarm)obj;
+				del(DEFAULT_PRIMARY_KEY, alarm.getUuidAsString());
+				//del(Market.MARKET_KEY, market.getMarketKey());
 			}
 		};
-		objectHelperCollection.put(CommunicationChannels.class, commChHelper);
+		objectHelperCollection.put(Alarm.class, alarmHelper);
 
 
+		driverTmp = new MongoDbAdapter(si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING), dbName, "projects");
+		GenericObjectHelper<Project> projectHelper = new GenericObjectHelper<Project>(cache, driverTmp, Project.class) {
+
+			@Override
+			public void addKeysHook() {
+				addKey(DEFAULT_PRIMARY_KEY);
+
+			}
+
+			@Override
+			public void initHook() {
+				/*try {
+					((MongoDbAdapter)getDriver()).createIndex("email", true);
+				} catch (BException e) {
+					e.printStackTrace();
+				}*/
+			}
+			@Override
+			public void del(Object obj) {
+				Project project = (Project)obj;
+				del(DEFAULT_PRIMARY_KEY, project.getUuidAsString());
+				//del(Market.MARKET_KEY, market.getMarketKey());
+			}
+		};
+		objectHelperCollection.put(Project.class, projectHelper);
+		
+
+		driverTmp = new MongoDbAdapter(si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING), dbName, "skills");
+		GenericObjectHelper<Skill> skillHelper = new GenericObjectHelper<Skill>(cache, driverTmp, Skill.class) {
+
+			@Override
+			public void addKeysHook() {
+				addKey(DEFAULT_PRIMARY_KEY);
+
+			}
+
+			@Override
+			public void initHook() {
+				/*try {
+					((MongoDbAdapter)getDriver()).createIndex("email", true);
+				} catch (BException e) {
+					e.printStackTrace();
+				}*/
+			}
+			@Override
+			public void del(Object obj) {
+				Skill skill = (Skill)obj;
+				del(DEFAULT_PRIMARY_KEY, skill.getUuidAsString());
+				//del(Market.MARKET_KEY, market.getMarketKey());
+			}
+		};
+		objectHelperCollection.put(Skill.class, skillHelper);
+
+		driverTmp = new MongoDbAdapter(si.getVar(ServiceVariables.MONGODB_CONNECTION_STRING), dbName, "roadpmaps");
+		GenericObjectHelper<RoadMapElement> roadMapElemHelper = new GenericObjectHelper<RoadMapElement>(cache, driverTmp, RoadMapElement.class) {
+
+			@Override
+			public void addKeysHook() {
+				addKey(DEFAULT_PRIMARY_KEY);
+
+			}
+
+			@Override
+			public void initHook() {
+				/*try {
+					((MongoDbAdapter)getDriver()).createIndex("email", true);
+				} catch (BException e) {
+					e.printStackTrace();
+				}*/
+			}
+			@Override
+			public void del(Object obj) {
+				RoadMapElement roadMapElement = (RoadMapElement)obj;
+				del(DEFAULT_PRIMARY_KEY, roadMapElement.getUuidAsString());
+				//del(Market.MARKET_KEY, market.getMarketKey());
+			}
+		};
+		objectHelperCollection.put(RoadMapElement.class, roadMapElemHelper);
 	}
 
 	public void populateDB2() throws BException { }
@@ -141,7 +243,6 @@ public class Repository extends GenericRepository {
 		goh.delete(obj, goh.getPrimaryKey(), obj.getUuidAsString());
 	}
 
-
 	public <T> void save(Object obj, Class<T> T, String primaryKeyValue) throws BException {
 		
 		@SuppressWarnings("unchecked")
@@ -149,11 +250,20 @@ public class Repository extends GenericRepository {
 		
 		goh.save(obj, goh.getPrimaryKey(), primaryKeyValue);
 	}
-	
 
-	
-	
-	
-	
-	
+	public <T> BEarer<GenericFilter> buildFilterPerUuid(String uuid, Repository repository, Class<T> clazz) {
+
+		return buildFilterSingleField(GenericObjectHelper.DEFAULT_PRIMARY_KEY, uuid, repository, clazz);
+	}
+
+	public <T> BEarer<GenericFilter> buildFilterSingleField(String fieldName, String fieldValue, Repository repository, Class<T> clazz) {
+
+		BEarer<GenericFilterBuilder> filterBuilderOp = repository.getFilterBuilder(clazz);
+		if (filterBuilderOp.isOk()) {
+			GenericFilter filter = filterBuilderOp.get().eq(fieldName, fieldValue);
+			return new BEarer<GenericFilter>().setSuccess().set(filter);
+		} else {
+			return BEarer.createGenericError(this, filterBuilderOp.getDescription());
+		}
+	}
 }

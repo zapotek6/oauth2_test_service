@@ -1,0 +1,18 @@
+{
+  "consumer": "activity",
+  "api": "activity.add",
+  "replyTo": "me",
+  "auth": {
+    "mode": "credentials",
+    "uid": "mk",
+    "pwd": "pineta"
+  },
+  "payload": {
+    "elems": [{
+      "title": "Draft proposta check ip da device",
+      "descr": "",
+      "completed": false
+    }],
+    "action": "add"
+  }
+}

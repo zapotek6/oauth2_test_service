@@ -1,0 +1,22 @@
+{
+  "consumer": "activity",
+  "api": "activity.add",
+  "replyTo": "me",
+  "auth": {
+    "mode": "credentials",
+    "uid": "mk",
+    "pwd": "pineta"
+  },
+  "payload": {
+    "activity": {
+      "identity" : {
+        "uuid" : "b44f9ea1-1ae5-4901-8308-894dc6aa931b",
+        "type" : "ACTIVITY"
+      },
+      "title": "Draft proposta check ip da device",
+      "descr": "",
+      "completed": false
+    },
+    "action": "addActivity"
+  }
+}

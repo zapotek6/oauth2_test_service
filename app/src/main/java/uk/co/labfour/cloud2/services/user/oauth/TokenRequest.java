@@ -8,21 +8,9 @@ public class TokenRequest {
     String clientId = null;
     String clientSecret = null;
     URI redirectUri = null;
-    OAuth2Common.AccessTokenGrantType grantType = null;
+    AuthorizationGrantType grantType = null;
     Set<String> scopes =null;
     String code = null;
-
-    public boolean isValid() {
-        if (    null == clientId ||
-                null == redirectUri ||
-                null == grantType ||
-                null == code) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
 
     public static TokenRequest build(Map<String, String[]> parameters) {
         TokenRequest tokenRequest =new TokenRequest();
@@ -33,7 +21,7 @@ public class TokenRequest {
 
         tokenRequest.redirectUri = OAuth2Common.getRedirecturi(parameters);
 
-        tokenRequest.grantType = OAuth2Common.getGrantType(parameters);
+        tokenRequest.grantType = OAuth2Common.getGrantType(parameters).get();
 
         tokenRequest.scopes = OAuth2Common.getScopes(parameters);
 

@@ -1,5 +1,7 @@
 package uk.co.labfour.cloud2.services.user.oauth;
 
+import uk.co.labfour.error.BEarer;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
@@ -16,11 +18,13 @@ public class OAuth2Common {
     public static final String HTTP_STATE_PARAMETER = "state";
     public static final String HTTP_CODE_PARAMETER = "code";
     public static final String HTTP_GRANT_TYPE_PARAMETER = "grant_type";
+    public static final String HTTP_ERROR_PARAMETER = "error";
 
     public static final String RESPONSE_TYPE_CODE = "code";     // authorization_code
     public static final String RESPONSE_TYPE_TOKEN = "token";   // implicit
+
     public static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
-    public static final String GRANT_TYPE_PASSWORD = "password";
+    public static final String GRANT_TYPE_RESOURCE_OWNER_PASSWORD_CREDENTIALS = "password";
     public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
     public static final String GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials";
 
@@ -28,10 +32,6 @@ public class OAuth2Common {
     public static final String TOKEN_TOKEN_TYPE_FIELD = "token_type";
     public static final String TOKEN_EXPIRES_IN_FIELD = "expires_in";
     public static final String TOKEN_REFRESH_TOKEN_FIELD = "refresh_token";
-
-    public enum AuthorizationGrantType { UNDEFINED, CODE, IMPLICIT }
-
-    public enum AccessTokenGrantType { UNDEFINED, AUTHORIZATION_CODE, PASSWORD, CLIENT_CREDENTIALS, REFRESH_TOKEN }
 
 
     private static String getParam(Map<String, String[]> params, String paramName) {
@@ -58,32 +58,48 @@ public class OAuth2Common {
         return null;
     }
 
-    public static AccessTokenGrantType getGrantType(Map<String, String[]> params) {
+    public static BEarer<AuthorizationGrantType> getGrantType(Map<String, String[]> params) {
         String grantType = getParam(params, HTTP_GRANT_TYPE_PARAMETER);
 
         if (grantType.equals(GRANT_TYPE_AUTHORIZATION_CODE)) {
-            return AccessTokenGrantType.AUTHORIZATION_CODE;
-        } else if (grantType.equals(OAuth2Common.GRANT_TYPE_PASSWORD)) {
-            return AccessTokenGrantType.PASSWORD;
+            return new BEarer<AuthorizationGrantType>()
+                    .setSuccess()
+                    .set(AuthorizationGrantType.AUTHORIZATION_CODE);
+
+        } else if (grantType.equals(OAuth2Common.GRANT_TYPE_RESOURCE_OWNER_PASSWORD_CREDENTIALS)) {
+            return new BEarer<AuthorizationGrantType>()
+                    .setSuccess()
+                    .set(AuthorizationGrantType.RESOURCE_OWNER_PASSWORD_CREDENTIALS);
+
         } else if (grantType.equals(OAuth2Common.GRANT_TYPE_CLIENT_CREDENTIALS)) {
-            return AccessTokenGrantType.CLIENT_CREDENTIALS;
+            return new BEarer<AuthorizationGrantType>()
+                    .setSuccess()
+                    .set(AuthorizationGrantType.CLIENT_CREDENTIALS);
+
         } else if (grantType.equals(OAuth2Common.GRANT_TYPE_REFRESH_TOKEN)) {
-            return AccessTokenGrantType.REFRESH_TOKEN;
+            return new BEarer<AuthorizationGrantType>()
+                    .setSuccess()
+                    .set(AuthorizationGrantType.REFRESH_TOKEN);
         }
 
-        return AccessTokenGrantType.UNDEFINED;
+        return BEarer.createGenericError(OAuth2Common.class.getSimpleName(), "Invalid Authorization Grant");
     }
 
-    public static AuthorizationGrantType getResponseType(Map<String, String[]> params) {
+    public static BEarer<ResponseType> getResponseType(Map<String, String[]> params) {
         String grantType = getParam(params, HTTP_RESPONSE_TYPE_PARAMETER);
 
         if (grantType.equals(RESPONSE_TYPE_CODE)) {
-            return AuthorizationGrantType.CODE;
-        } else if (grantType.equals(OAuth2Common.RESPONSE_TYPE_TOKEN)) {
-            return AuthorizationGrantType.IMPLICIT;
+            return new BEarer<ResponseType>()
+                    .setSuccess()
+                    .set(ResponseType.AUTHORIZATION_CODE);
+
+        } else if (grantType.equals(RESPONSE_TYPE_TOKEN)) {
+            return new BEarer<ResponseType>()
+                    .setSuccess()
+                    .set(ResponseType.TOKEN);
         }
 
-        return AuthorizationGrantType.UNDEFINED;
+        return BEarer.createGenericError(OAuth2Common.class.getSimpleName(), "Invalid Reponse Type");
     }
 
     public static Set<String> getScopes(Map<String, String[]> params) {
