@@ -15,6 +15,7 @@ public class Contact extends BaseObject {
     String role;
     String nickname;
     String company;
+    String extSys1Id1;
 
     public Contact() {
         super(new Identity(UUID.randomUUID(), TYPE));
@@ -71,6 +72,15 @@ public class Contact extends BaseObject {
 
     public Contact setNickname(String nickname) {
         this.nickname = nickname;
+        return this;
+    }
+
+    public String getExtSys1Id1() {
+        return extSys1Id1;
+    }
+
+    public Contact setExtSys1Id1(String extSys1Id1) {
+        this.extSys1Id1 = extSys1Id1;
         return this;
     }
 }

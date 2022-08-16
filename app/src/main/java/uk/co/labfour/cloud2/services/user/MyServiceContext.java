@@ -1,7 +1,7 @@
 package uk.co.labfour.cloud2.services.user;
 
+import com.zerortt.pm.model.Note;
 import uk.co.labfour.bjson.BJsonDeSerializer;
-import uk.co.labfour.bjson.BJsonException;
 import uk.co.labfour.bjson.BJsonObject;
 import uk.co.labfour.cloud2.aaa.common.IAAAClient;
 import uk.co.labfour.cloud2.aaa_client.AAAClient;
@@ -9,12 +9,11 @@ import uk.co.labfour.cloud2.microservice.ServiceContext;
 import uk.co.labfour.cloud2.microservice.ServiceVariables;
 import uk.co.labfour.cloud2.persistence.nosql.GenericFilter;
 import uk.co.labfour.cloud2.persistence.nosql.GenericRepository;
+import uk.co.labfour.cloud2.pmbok.pm.model.Issue;
 import uk.co.labfour.cloud2.protocol.BaseResponse;
-import uk.co.labfour.cloud2.protocol.Constants;
-import uk.co.labfour.cloud2.services.user.model.*;
 import uk.co.labfour.cloud2.services.user.services.Hooks;
 import uk.co.labfour.cloud2.services.user.services.Repository;
-import uk.co.labfour.cloud2.services.user.services.SimpleCRUDSvc;
+import uk.co.labfour.cloud2.services.user.services.SimpleCRUDSvc2;
 import uk.co.labfour.error.BEarer;
 import uk.co.labfour.error.BException;
 import uk.co.labfour.fsm.IStateMachine;
@@ -23,6 +22,8 @@ import uk.co.labfour.net.proto.mqtt.client.Mqtt;
 import uk.co.labfour.net.proto.mqtt.client.MqttClientAsync;
 import uk.co.labfour.net.transport.IGenericTransport2;
 import uk.co.labfour.net.transport.MqttTransport2;
+
+import java.util.UUID;
 
 public class MyServiceContext extends ServiceContext {
     private static MyServiceContext instance;
@@ -55,6 +56,11 @@ public class MyServiceContext extends ServiceContext {
         addVar(ServiceVariables.REDIS_PORT, "6379");
         addVar(ServiceVariables.REDIS_DB, "0");
         addVar(ServiceVariables.REDIS_CONNECTION_STRING, null);
+
+        addVar("JIRA_V3_ENDPOINT", "https://comelit.atlassian.net/rest/api/3");
+        addVar("JIRA_V3_USER", "mirko.bonadei@comelit.it");
+        addVar("JIRA_V3_APIKEY", "");
+
 
     }
 
@@ -107,7 +113,7 @@ public class MyServiceContext extends ServiceContext {
     @Override
     protected void populateServices() throws BException {
 
-        Hooks<Activity> addHook = new Hooks<Activity>() {
+        /*Hooks<Activity> addHook = new Hooks<Activity>() {
             @Override
             public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Activity> clazz) {
                 return null;
@@ -241,46 +247,46 @@ public class MyServiceContext extends ServiceContext {
 
 
 
-        Hooks<Project> addHookProject = new Hooks<Project>() {
+        Hooks<Task> addHookProject = new Hooks<Task>() {
             @Override
-            public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Project> clazz) {
+            public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Task> clazz) {
                 return null;
             }
 
             @Override
-            public BEarer pre(Project object) {
+            public BEarer pre(Task object) {
                 object.setCreated(System.currentTimeMillis());
                 object.setUpdated(System.currentTimeMillis());
                 return BEarer.createSuccess();
             }
 
             @Override
-            public BEarer post(Project object) {
+            public BEarer post(Task object) {
                 return BEarer.createSuccess();
             }
         };
 
-        Hooks<Project> updateHookProject = new Hooks<Project>() {
+        Hooks<Task> updateHookProject = new Hooks<Task>() {
             @Override
-            public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Project> clazz) {
+            public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Task> clazz) {
                 return null;
             }
 
             @Override
-            public BEarer pre(Project object) {
+            public BEarer pre(Task object) {
                 object.setUpdated(System.currentTimeMillis());
                 return BEarer.createSuccess();
             }
 
             @Override
-            public BEarer post(Project object) {
+            public BEarer post(Task object) {
                 return BEarer.createSuccess();
             }
         };
 
         addService("project",
                 null,
-                new SimpleCRUDSvc<>(this, Repository.getInstance(this), Project.class)
+                new SimpleCRUDSvc<>(this, Repository.getInstance(this), Task.class)
                         .setAddHook(addHookProject)
                         .setUpdateHook(updateHookProject),
                 "project",
@@ -422,10 +428,125 @@ public class MyServiceContext extends ServiceContext {
                         .setUpdateHook(updateHookRoadMapElement),
                 "roadmapelement",
                 "/roadmapelement");
+        */
+
+        Hooks<Issue> getHookIssue = new Hooks<Issue>() {
+            @Override
+            public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Issue> clazz) {
+                if (payload.has("id")) {
+                    var idOP = payload.getElmAsStringByPath("id");
+                    if (idOP.isOk()) {
+                        BEarer<GenericFilter> filterOp = repository.buildFilterSingleField("_id", idOP.get(), repository, clazz);
+
+                        if (filterOp.isOk()) {
+                            return filterOp;
+                        } else {
+                            return BEarer.createGenericError(this, filterOp.getDescription());
+                        }
+                    } else {
+                        return new BEarer<GenericFilter>(idOP.isOk(), idOP.getCode());
+                    }
+                } else {
+                    return BEarer.createGenericError(this, "missing id");
+                }
+            }
+
+            @Override
+            public BEarer pre(Issue object) {
+                return BEarer.createSuccess();
+            }
+
+            @Override
+            public BEarer post(Issue object) {
+                return BEarer.createSuccess();
+            }
+        };
+
+        Hooks<Issue> addHookIssue = new Hooks<Issue>() {
+            @Override
+            public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Issue> clazz) {
+                return null;
+            }
+
+            @Override
+            public BEarer pre(Issue object) {
+                object.setPK(UUID.randomUUID().toString());
+//                object.setCreated(System.currentTimeMillis());
+//                object.setUpdated(System.currentTimeMillis());
+                return BEarer.createSuccess();
+            }
+
+            @Override
+            public BEarer post(Issue object) {
+                return BEarer.createSuccess();
+            }
+        };
+
+        Hooks<Issue> updateHookIssue = new Hooks<Issue>() {
+            @Override
+            public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Issue> clazz) {
+                return null;
+            }
+
+            @Override
+            public BEarer pre(Issue object) {
+//                object.setUpdated(System.currentTimeMillis());
+                return BEarer.createSuccess();
+            }
+
+            @Override
+            public BEarer post(Issue object) {
+                return BEarer.createSuccess();
+            }
+        };
+
+        addService("issue",
+                null,
+                new SimpleCRUDSvc2<>(this, Repository.getInstance(this), Issue.class)
+                        .setGetHook(getHookIssue)
+                        .setAddHook(addHookIssue)
+                        .setUpdateHook(updateHookIssue),
+                "issue",
+                "/issue");
+
+
+        Hooks<Note> getNoteHook = new Hooks<Note>() {
+            @Override
+            public BEarer<GenericFilter> prepareFilter(Repository repository, BJsonDeSerializer bJsonDeSerializer, BJsonObject payload, Class<Note> clazz) {
+                if (payload.has("id")) {
+                    var idOP = payload.getElmAsStringByPath("id");
+                    if (idOP.isOk()) {
+                        BEarer<GenericFilter> filterOp = repository.buildFilterSingleField("_id", idOP.get(), repository, clazz);
+
+                        if (filterOp.isOk()) {
+                            return filterOp;
+                        } else {
+                            return BEarer.createGenericError(this, filterOp.getDescription());
+                        }
+                    } else {
+                        return new BEarer<GenericFilter>(idOP.isOk(), idOP.getCode());
+                    }
+                } else {
+                    return BEarer.createGenericError(this, "missing id");
+                }
+            }
+
+            @Override
+            public BEarer pre(Note object) {
+                return BEarer.createSuccess();
+            }
+
+            @Override
+            public BEarer post(Note object) {
+                return BEarer.createSuccess();
+            }
+        };
+
+        addService("note",
+                null,
+                new SimpleCRUDSvc2<>(this, Repository.getInstance(this), Note.class)
+                        .setGetHook(getNoteHook),
+                "note",
+                "/note");
     }
-
-
-
-
-
 }

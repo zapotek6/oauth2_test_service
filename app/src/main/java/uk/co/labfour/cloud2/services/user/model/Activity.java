@@ -9,6 +9,20 @@ import java.util.Vector;
 public class Activity extends BaseObject {
     public final static String TYPE = "ACTIVITY";
 
+    /*
+    * key
+    * projectId
+    * storyId
+    * epicId
+    * status
+    * assignee
+    * reporter
+    * estimation
+    * priority
+    * components
+    * progress
+    * */
+
     Identity project;
     Identity roadmapElement;
     Identity owner;

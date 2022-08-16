@@ -1,6 +1,6 @@
 {
   "consumer": "activity",
-  "api": "activity.add",
+  "api": "activity.issue",
   "replyTo": "me",
   "auth": {
     "mode": "credentials",

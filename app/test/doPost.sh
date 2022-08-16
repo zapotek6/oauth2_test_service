@@ -3,7 +3,7 @@
 ####### MAIN
 API_SERVER="http://api.labfour.co.uk"
 API_PATH="/"
-API_FILE="reload-config.json"
+API_FILE="getNote.json"
 
 if [ ! -z "$1" ]; then
   API_SERVER=$1

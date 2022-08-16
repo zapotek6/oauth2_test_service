@@ -1,6 +1,6 @@
 {
   "consumer": "activity",
-  "api": "activity.add",
+  "api": "issue",
   "replyTo": "me",
   "auth": {
     "mode": "credentials",
@@ -8,6 +8,8 @@
     "pwd": "pineta"
   },
   "payload": {
+    "id": "8c2c4f63-cc85-493b-9261-eb08cd636d44",
     "action": "get"
   }
 }
+

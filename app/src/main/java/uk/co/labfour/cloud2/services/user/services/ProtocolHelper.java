@@ -3,11 +3,13 @@ package uk.co.labfour.cloud2.services.user.services;
 import uk.co.labfour.bjson.*;
 import uk.co.labfour.cloud2.entity.identity.Identity;
 import uk.co.labfour.cloud2.entity.primitive.IBaseObject;
+import uk.co.labfour.cloud2.entity.primitive.IPrimaryKey;
 import uk.co.labfour.cloud2.persistence.nosql.GenericFilter;
+import uk.co.labfour.cloud2.persistence.nosql.GenericObjectHelper2;
+import uk.co.labfour.cloud2.persistence.nosql.GenericRepository2;
 import uk.co.labfour.cloud2.protocol.BaseResponse;
 import uk.co.labfour.cloud2.protocol.Constants;
 import uk.co.labfour.error.BEarer;
-import uk.co.labfour.error.BException;
 
 import java.util.Vector;
 
@@ -29,10 +31,11 @@ public class ProtocolHelper {
                 return;
             }
         } else {
-            if (payload.has(Constants.FIELD_UUID)) {
-                String uuid = payload.getElementAsString(Constants.FIELD_UUID);
+            String primaryKeyName = repository.getGenericObjectHelper(clazz).get().getPrimaryKey();
+            if (payload.has(primaryKeyName)) {
+                String primarykeyValue = payload.getElementAsString(primaryKeyName);
 
-                filterOp = repository.buildFilterPerUuid(uuid, repository, clazz);
+                filterOp = repository.buildFilterSingleField(primaryKeyName, primarykeyValue, repository, clazz);
 
                 if (filterOp.isOk()) {
                     filter = filterOp.get();
@@ -67,18 +70,49 @@ public class ProtocolHelper {
                 T object = bJsonDeSerializer.fromJson(jObject, clazz);
 
                 if (null != cb && cb.pre(object).isOk()) {
-                    repository.save(object, clazz, object.getUuidAsString());
+                    repository.save(object);
                     identities.add(object.getIdentity());
                 } else {
-                    repository.save(object, clazz, object.getUuidAsString());
+                    repository.save(object);
                     identities.add(object.getIdentity());
                 }
-
             }
 
             response.getPayload().put(Constants.FIELD_RESULTS, bJsonDeSerializer.toJson(identities));
 
-        } catch (BException | BJsonException e) {
+        } catch (BJsonException e) {
+            return BEarer.createGenericError(ProtocolHelper.class.toString(), e.getMessage());
+        }
+
+        return BEarer.createSuccess();
+    }
+
+    public static <T> BEarer update2(BaseResponse response, BJsonObject payload, Repository repository, BJsonDeSerializer bJsonDeSerializer, Class<T> clazz, Hooks<T> cb) {
+
+        Vector<String> identities = new Vector<>();
+        BJsonArray jArray = null;
+
+        try {
+            jArray = payload.getElementAsBJsonArray(Constants.FIELD_ELEMS);
+
+
+            for (BJsonElement jArrayElement: jArray) {
+                BJsonObject jObject = jArrayElement.getAsBJsonObject();
+
+                T object = bJsonDeSerializer.fromJson(jObject, clazz);
+
+                if (null != cb && cb.pre(object).isOk()) {
+                    ProtocolHelper.addIdentities(repository, object, identities, clazz);
+                    repository.save(object);
+                } else {
+                    ProtocolHelper.addIdentities(repository, object, identities, clazz);
+                    repository.save(object);
+                }
+            }
+
+            response.getPayload().put(Constants.FIELD_RESULTS, bJsonDeSerializer.toJson(identities));
+
+        } catch (BJsonException e) {
             return BEarer.createGenericError(ProtocolHelper.class.toString(), e.getMessage());
         }
 
@@ -90,7 +124,7 @@ public class ProtocolHelper {
 
         try {
 
-            BEarer<Vector<T>> queryEntitiesOp = repository.load(filter, clazz);
+            BEarer<Vector<T>> queryEntitiesOp = repository.read(filter, clazz);
 
             if (queryEntitiesOp.isOk()) {
                 BJsonElement elm = bJsonDeSerializer.toJsonTree(queryEntitiesOp.get());
@@ -107,4 +141,27 @@ public class ProtocolHelper {
         }
     }
 
+    public static BEarer<String> getPK(Repository repository, Object object, Class<?> clazz) {
+        var goh = repository.getGenericObjectHelper(clazz);
+        if (goh.isOk()) {
+            var helper = goh.get();
+            BEarer<String> pk = helper.readIndex(object, helper.getPrimaryKey(), clazz);
+            if (pk.isOk()) {
+                return new BEarer<String>()
+                        .set(pk.get())
+                        .setSuccess();
+            } else {
+                return pk;
+            }
+        } else {
+            return BEarer.createGenericError(ProtocolHelper.class.getClass().getCanonicalName(), goh.getDescription(), String.class);
+        }
+    }
+
+    public static void addIdentities(Repository repository, Object object, Vector<String> identities, Class<?> clazz) {
+        var pk = ProtocolHelper.getPK(repository, object, clazz);
+        if (pk.isOk()) {
+            identities.add(pk.get());
+        }
+    }
 }

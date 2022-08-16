@@ -2,20 +2,14 @@ package uk.co.labfour.cloud2.services.user.core;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
-import uk.co.labfour.bjson.BJsonArray;
 import uk.co.labfour.bjson.BJsonException;
-import uk.co.labfour.bjson.BJsonObject;
 import uk.co.labfour.cloud2.microservice.ServiceContext;
 import uk.co.labfour.cloud2.microservice.ServiceStub;
 import uk.co.labfour.cloud2.protocol.BaseRequest;
 import uk.co.labfour.cloud2.protocol.BaseResponse;
 import uk.co.labfour.cloud2.services.user.MyServiceContext;
-import uk.co.labfour.cloud2.services.user.oauth.*;
-import uk.co.labfour.error.BEarer;
 import uk.co.labfour.error.BException;
 import uk.co.labfour.logger.MyLogger;
 import uk.co.labfour.logger.MyLoggerFactory;
@@ -23,8 +17,6 @@ import uk.co.labfour.logger.MyLoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.servlet.http.HttpServletRequest;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 import static org.springframework.web.bind.annotation.RequestMethod.*;
 
@@ -37,13 +29,14 @@ public class Rest {
     ServiceContext si;
 
 
-    @RequestMapping(path = "/oauth/user/login", method = RequestMethod.GET)
+/*
+    @RequestMapping(path = "/oauth2/user/login", method = RequestMethod.GET)
     private ResponseEntity<?> userLogin(HttpServletRequest request) {
 
         HttpHeaders httpHeaders = new HttpHeaders();
 
         try {
-            httpHeaders.setLocation(new URI("/oauth/user/authorize"));
+            httpHeaders.setLocation(new URI("/oauth2/user/authorize"));
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -51,13 +44,13 @@ public class Rest {
     }
 
 
-    @RequestMapping(path = "/oauth/user/authorize", method = RequestMethod.GET)
+    @RequestMapping(path = "/oauth2/user/authorize", method = RequestMethod.GET)
     private ResponseEntity<?> userAuthorize(HttpServletRequest request) {
 
         HttpHeaders httpHeaders = new HttpHeaders();
 
         try {
-            httpHeaders.setLocation(new URI("/oauth/user/authorize"));
+            httpHeaders.setLocation(new URI("/oauth2/user/authorize"));
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
@@ -65,7 +58,7 @@ public class Rest {
     }
 
 
-    @RequestMapping(path = "/oauth/authorize", method = RequestMethod.GET)
+    @RequestMapping(path = "/oauth2/authorize", method = RequestMethod.GET)
     private ResponseEntity<?> oauthAuthorizationRequest(HttpServletRequest request) {
 
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -111,12 +104,13 @@ public class Rest {
 
     }
 
-    @RequestMapping(path = "/oauth/token", method = RequestMethod.POST)
+    @RequestMapping(path = "/oauth2/token", method = RequestMethod.POST)
     private ResponseEntity<?> oauthTokenRequest(HttpServletRequest request) {
 
         HttpHeaders httpHeaders = new HttpHeaders();
 
-		/*System.out.println("authType: " + request.getAuthType());
+		*/
+/*System.out.println("authType: " + request.getAuthType());
 		Enumeration<String> attr = request.getAttributeNames();
 		while (attr.hasMoreElements()) {
 			System.out.println("attribute: " + attr.nextElement());
@@ -128,7 +122,8 @@ public class Rest {
 			for (String v: (String[])par.loadAsJson(s)) {
 				System.out.println(" v: " + v);
 			}
-		}*/
+		}*//*
+
 
         TokenRequest tokenRequest = TokenRequest.build(request.getParameterMap());
         if (tokenRequest.isValid()) {
@@ -193,6 +188,7 @@ public class Rest {
         return new ResponseEntity<>(feed.toString(), httpHeaders, HttpStatus.OK);
 
     }
+*/
 
 
     @RequestMapping(method = RequestMethod.POST)
